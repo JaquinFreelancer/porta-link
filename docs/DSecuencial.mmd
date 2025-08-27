@@ -1,0 +1,349 @@
+sequenceDiagram
+    %% Comentarios:
+    %% - Diagramas de secuencia principales para plataforma de portafolios profesionales
+    %% - Incluye flujos críticos: registro, creación de perfil, búsqueda de talento, mensajería
+    %% - Muestra interacciones entre Frontend, API Gateway, microservicios y sistemas externos
+    %% - Considera integración con GitHub/LinkedIn y sistema de recomendaciones AI
+
+    participant V as Visitante
+    participant F as Frontend
+    participant G as API Gateway
+    participant U as User Service
+    participant P as Profile Service
+    participant Pr as Project Service
+    participant S as Search Service
+    participant M as Message Service
+    participant A as Analytics Service
+    participant N as Notification Service
+    participant I as Integration Service
+    participant DB as Database
+    participant Cache as Redis Cache
+    participant ES as Elasticsearch
+    participant Ext as External APIs
+
+    %% === DIAGRAMA 1: REGISTRO DE PROFESIONAL CON ONBOARDING ===
+    Note over V,Ext: 👤 Flujo de Registro y Onboarding de Profesional
+
+    V->>F: 1. Accede a /register/professional
+    F->>V: 2. Formulario de registro profesional
+    V->>F: 3. Completa datos básicos (email, password, nombre)
+    F->>G: 4. POST /api/auth/register
+    G->>U: 5. Valida y registra usuario
+    U->>DB: 6. Verifica email único
+    DB->>U: 7. Email disponible
+    U->>DB: 8. Crea usuario con status PENDING
+    DB->>U: 9. Usuario creado (user_id)
+    U->>U: 10. Genera token de verificación
+    U->>N: 11. Envía email de verificación
+    N->>Ext: 12. Email de bienvenida + verificación
+    U->>G: 13. Usuario registrado exitosamente
+    G->>F: 14. Redirige a /register/success
+    F->>V: 15. "Revisa tu email para verificar cuenta"
+
+    V->>F: 16. Hace clic en enlace de verificación
+    F->>G: 17. GET /api/auth/verify-email/:token
+    G->>U: 18. Verifica token de email
+    U->>DB: 19. Actualiza email_verified = true
+    DB->>U: 20. Usuario verificado
+    U->>P: 21. Crea perfil profesional básico
+    P->>DB: 22. Inserta professional_profile
+    DB->>P: 23. Perfil creado
+    U->>G: 24. Email verificado exitosamente
+    G->>F: 25. Redirige a /onboarding
+    F->>V: 26. Wizard de onboarding guiado
+
+    %% === DIAGRAMA 2: CREACIÓN DE PROYECTO EN PORTAFOLIO ===
+    Note over V,Ext: 🎨 Flujo de Creación de Proyecto en Portafolio
+
+    V->>F: 1. Navega a /portfolio/projects/new (autenticado)
+    F->>G: 2. GET /api/profile (verificar completitud)
+    G->>P: 3. Obtiene datos del perfil profesional
+    P->>DB: 4. Consulta professional_profile
+    DB->>P: 5. Datos del perfil
+    P->>G: 6. Perfil del usuario
+    G->>F: 7. Formulario de nuevo proyecto
+    F->>V: 8. Interfaz para crear proyecto
+
+    V->>F: 9. Completa información del proyecto
+    F->>F: 10. Valida campos requeridos (título, descripción)
+    F->>G: 11. POST /api/projects (con datos del proyecto)
+    G->>Pr: 12. Crea nuevo proyecto
+    Pr->>DB: 13. Inserta proyecto con status DRAFT
+    DB->>Pr: 14. Proyecto creado (project_id)
+    Pr->>Pr: 15. Genera slug único del proyecto
+    
+    alt Proyecto con imágenes
+        V->>F: 16. Sube imágenes del proyecto
+        F->>G: 17. POST /api/upload/project-image
+        G->>Pr: 18. Procesa imágenes
+        Pr->>Ext: 19. Sube a S3/CloudStorage
+        Ext->>Pr: 20. URLs de imágenes
+        Pr->>DB: 21. Inserta project_images
+        DB->>Pr: 22. Imágenes asociadas
+    end
+
+    V->>F: 23. Selecciona habilidades del proyecto
+    F->>G: 24. POST /api/projects/:id/skills
+    G->>Pr: 25. Asocia habilidades al proyecto
+    Pr->>DB: 26. Inserta project_skills
+    DB->>Pr: 27. Habilidades asociadas
+
+    V->>F: 28. Publica proyecto
+    F->>G: 29. PUT /api/projects/:id/publish
+    G->>Pr: 30. Cambia status a PUBLISHED
+    Pr->>DB: 31. Actualiza proyecto
+    DB->>Pr: 32. Proyecto publicado
+    Pr->>ES: 33. Indexa proyecto para búsqueda
+    ES->>Pr: 34. Proyecto indexado
+    Pr->>A: 35. Registra evento ProjectCreated
+    A->>DB: 36. Log de analytics
+    Pr->>G: 37. Proyecto publicado exitosamente
+    G->>F: 38. Redirige a /portfolio/projects/:id
+    F->>V: 39. Vista del proyecto publicado
+
+    %% === DIAGRAMA 3: BÚSQUEDA AVANZADA DE TALENTO ===
+    Note over V,Ext: 🔍 Flujo de Búsqueda Avanzada por Reclutador
+
+    V->>F: 1. Accede a /search/advanced (como reclutador)
+    F->>G: 2. GET /api/search/filters
+    G->>S: 3. Obtiene opciones de filtrado
+    S->>ES: 4. Consulta agregaciones disponibles
+    ES->>S: 5. Datos de filtros (skills, locations, etc.)
+    S->>G: 6. Opciones de filtrado
+    G->>F: 7. Interfaz de búsqueda avanzada
+    F->>V: 8. Formulario con filtros disponibles
+
+    V->>F: 9. Configura criterios (skills, experiencia, ubicación)
+    F->>G: 10. POST /api/search/professionals
+    G->>S: 11. Ejecuta búsqueda con criterios
+    S->>ES: 12. Query compleja con filtros
+    ES->>S: 13. Resultados de búsqueda paginados
+    S->>Cache: 14. Cachea resultados frecuentes
+    Cache->>S: 15. Cache actualizado
+    S->>A: 16. Registra búsqueda para analytics
+    A->>DB: 17. Log de búsqueda
+    S->>G: 18. Resultados encontrados
+    G->>F: 19. Lista de profesionales
+    F->>V: 20. Resultados en vista de tarjetas
+
+    V->>F: 21. Ve perfil completo de candidato
+    F->>G: 22. GET /api/profiles/:username
+    G->>P: 23. Obtiene perfil público completo
+    P->>DB: 24. Consulta datos del profesional
+    DB->>P: 25. Información completa del perfil
+    P->>A: 26. Registra vista de perfil
+    A->>DB: 27. Analytics de visualización
+    P->>G: 28. Datos del perfil
+    G->>F: 29. Perfil completo
+    F->>V: 30. Vista detallada del candidato
+
+    V->>F: 31. Guarda búsqueda para uso futuro
+    F->>G: 32. POST /api/search/save
+    G->>S: 33. Guarda criterios de búsqueda
+    S->>DB: 34. Inserta saved_search
+    DB->>S: 35. Búsqueda guardada
+    S->>G: 36. Búsqueda guardada exitosamente
+    G->>F: 37. Confirmación
+    F->>V: 38. "Búsqueda guardada como 'Frontend React Developers'"
+
+    %% === DIAGRAMA 4: MENSAJERÍA Y NETWORKING PROFESIONAL ===
+    Note over V,Ext: 💬 Flujo de Contacto Profesional
+
+    V->>F: 1. Encuentra profesional interesante
+    F->>F: 2. Verifica si puede enviar mensaje (reclutador verificado)
+    V->>F: 3. Selecciona "Enviar mensaje"
+    F->>G: 4. GET /api/profiles/:username/contact-settings
+    G->>P: 5. Verifica configuración de mensajería
+    P->>DB: 6. Consulta preferencias de contacto
+    DB->>P: 7. Configuración del profesional
+    P->>G: 8. Puede recibir mensajes
+    G->>F: 9. Formulario de contacto
+    F->>V: 10. Interfaz para enviar mensaje
+
+    V->>F: 11. Completa mensaje con contexto profesional
+    F->>G: 12. POST /api/contact/:username
+    G->>M: 13. Procesa mensaje de contacto
+    M->>M: 14. Valida contenido (anti-spam)
+    M->>DB: 15. Crea conversación nueva
+    DB->>M: 16. Conversación creada (conversation_id)
+    M->>DB: 17. Inserta mensaje inicial
+    DB->>M: 18. Mensaje enviado
+    M->>N: 19. Notifica al profesional
+    N->>Cache: 20. Actualiza contador de mensajes
+    Cache->>N: 21. Contador actualizado
+    N->>Ext: 22. Envía email de notificación
+    Ext->>N: 23. Email enviado
+    M->>A: 24. Registra evento de networking
+    A->>DB: 25. Analytics de mensajería
+    M->>G: 26. Mensaje enviado exitosamente
+    G->>F: 27. Confirmación
+    F->>V: 28. "Mensaje enviado a [Profesional]"
+
+    %% === DIAGRAMA 5: INTEGRACIÓN CON GITHUB ===
+    Note over V,Ext: 🔗 Flujo de Integración con GitHub
+
+    V->>F: 1. Accede a /integrations (profesional)
+    F->>G: 2. GET /api/integrations
+    G->>I: 3. Lista integraciones disponibles
+    I->>G: 4. GitHub, LinkedIn, etc.
+    G->>F: 5. Centro de integraciones
+    F->>V: 6. Opciones de conexión disponibles
+
+    V->>F: 7. Selecciona "Conectar GitHub"
+    F->>G: 8. POST /api/integrations/github/connect
+    G->>I: 9. Inicia flujo OAuth con GitHub
+    I->>Ext: 10. Redirige a GitHub OAuth
+    Ext->>V: 11. Página de autorización GitHub
+    V->>Ext: 12. Autoriza acceso a repositorios
+    Ext->>I: 13. Callback con authorization code
+    I->>Ext: 14. Intercambia code por access token
+    Ext->>I: 15. GitHub access token
+    I->>DB: 16. Guarda token encriptado
+    DB->>I: 17. Integración guardada
+
+    I->>Ext: 18. Consulta repositorios del usuario
+    Ext->>I: 19. Lista de repositorios públicos
+    I->>I: 20. Filtra repositorios relevantes
+    I->>Pr: 21. Sugiere repositorios como proyectos
+    Pr->>F: 22. Lista de repos para importar
+    F->>V: 23. "Selecciona repositorios para tu portafolio"
+
+    V->>F: 24. Selecciona repositorios interesantes
+    F->>G: 25. POST /api/integrations/github/import
+    G->>I: 26. Importa repositorios seleccionados
+    I->>Ext: 27. Obtiene detalles de cada repo
+    Ext->>I: 28. README, tecnologías, commits
+    I->>Pr: 29. Crea proyectos desde repositorios
+    Pr->>DB: 30. Inserta proyectos importados
+    DB->>Pr: 31. Proyectos creados
+    Pr->>ES: 32. Indexa nuevos proyectos
+    ES->>Pr: 33. Proyectos indexados
+    I->>G: 34. Importación completada
+    G->>F: 35. Proyectos importados exitosamente
+    F->>V: 36. "5 repositorios importados a tu portafolio"
+
+    %% === DIAGRAMA 6: ANALYTICS Y RECOMENDACIONES ===
+    Note over V,Ext: 📊 Flujo de Analytics y Recomendaciones AI
+
+    V->>F: 1. Accede a /analytics (profesional)
+    F->>G: 2. GET /api/analytics/profile
+    G->>A: 3. Genera reporte de analytics
+    A->>DB: 4. Consulta datos históricos
+    DB->>A: 5. Métricas de perfil y proyectos
+    A->>A: 6. Procesa estadísticas y tendencias
+    A->>Cache: 7. Cachea métricas frecuentes
+    Cache->>A: 8. Cache actualizado
+    A->>G: 9. Reporte de analytics
+    G->>F: 10. Dashboard de métricas
+    F->>V: 11. Estadísticas detalladas
+
+    A->>A: 12. Analiza patrones de visualización
+    A->>Ext: 13. Consulta AI para recomendaciones
+    Ext->>A: 14. Sugerencias personalizadas
+    A->>F: 15. Recomendaciones para mejorar perfil
+    F->>V: 16. "Agrega estas habilidades trending..."
+
+    %% === DIAGRAMA 7: BÚSQUEDA PÚBLICA Y SEO ===
+    Note over V,Ext: 🌐 Flujo de Búsqueda Pública y SEO
+
+    V->>F: 1. Visitante accede a /directory
+    F->>G: 2. GET /api/profiles/public
+    G->>S: 3. Obtiene perfiles públicos destacados
+    S->>ES: 4. Query de perfiles públicos
+    ES->>S: 5. Perfiles ordenados por relevancia
+    S->>Cache: 6. Verifica cache de directorio
+    Cache->>S: 7. Datos cacheados
+    S->>G: 8. Perfiles públicos
+    G->>F: 9. Directorio de talento
+    F->>V: 10. Vista del directorio público
+
+    V->>F: 11. Busca "React Developer Madrid"
+    F->>G: 12. GET /api/search/profiles?q=React+Developer+Madrid
+    G->>S: 13. Búsqueda con query y ubicación
+    S->>ES: 14. Query multicriterio optimizada
+    ES->>S: 15. Resultados rankeados
+    S->>A: 16. Registra búsqueda anónima
+    A->>DB: 17. Analytics de búsqueda pública
+    S->>G: 18. Resultados encontrados
+    G->>F: 19. Lista de profesionales
+    F->>V: 20. Perfiles que coinciden con búsqueda
+
+    V->>F: 21. Ve perfil público /@username
+    F->>G: 22. GET /api/profiles/:username/public
+    G->>P: 23. Obtiene perfil público optimizado
+    P->>DB: 24. Consulta datos públicos
+    DB->>P: 25. Información del perfil
+    P->>A: 26. Registra vista (IP anónima)
+    A->>DB: 27. Analytics de vista pública
+    P->>G: 28. Perfil público con SEO
+    G->>F: 29. Perfil optimizado
+    F->>V: 30. Perfil profesional completo
+
+    %% === DIAGRAMA 8: SISTEMA DE NOTIFICACIONES EN TIEMPO REAL ===
+    Note over V,Ext: 🔔 Flujo de Notificaciones en Tiempo Real
+
+    participant WS as WebSocket
+
+    Note over V,WS: Usuario conectado recibe notificaciones instantáneas
+
+    V->>F: 1. Usuario autenticado se conecta
+    F->>WS: 2. Establece conexión WebSocket
+    WS->>N: 3. Registra conexión del usuario
+    N->>Cache: 4. Almacena estado de conexión
+    Cache->>N: 5. Usuario online registrado
+
+    alt Nuevo mensaje recibido
+        M->>N: 6. Evento MessageReceived
+        N->>Cache: 7. Verifica si usuario está online
+        Cache->>N: 8. Usuario conectado
+        N->>WS: 9. Notificación en tiempo real
+        WS->>F: 10. Push notification al cliente
+        F->>V: 11. Notificación de nuevo mensaje
+        
+        N->>Ext: 12. También envía email si configurado
+        Ext->>N: 13. Email de notificación enviado
+    end
+
+    alt Vista de perfil por reclutador
+        P->>N: 14. Evento ProfileViewed
+        N->>Cache: 15. Verifica configuración de notificaciones
+        Cache->>N: 16. Notificaciones habilitadas
+        N->>WS: 17. Notificación de vista de perfil
+        WS->>F: 18. Notificación push
+        F->>V: 19. "Un reclutador vio tu perfil"
+    end
+
+    %% === DIAGRAMA 9: MODERACIÓN DE CONTENIDO ===
+    Note over V,Ext: 🛡️ Flujo de Moderación de Contenido
+
+    V->>F: 1. Usuario reporta contenido inapropiado
+    F->>G: 2. POST /api/reports/profile/:id
+    G->>A: 3. Crea reporte de moderación
+    A->>DB: 4. Inserta reporte con detalles
+    DB->>A: 5. Reporte creado
+    A->>Ext: 6. Análisis automático con AI
+    Ext->>A: 7. Resultado de moderación automática
+    
+    alt Contenido claramente inapropiado
+        A->>P: 8. Oculta contenido automáticamente
+        P->>DB: 9. Marca perfil como oculto
+        DB->>P: 10. Perfil moderado
+        A->>N: 11. Notifica a administradores
+        N->>Admin: 12. Alerta de moderación automática
+    else Contenido requiere revisión manual
+        A->>N: 8. Envía a cola de moderación
+        N->>Admin: 9. Notificación para revisión manual
+        Admin->>F: 10. Accede a panel de moderación
+        F->>G: 11. GET /api/admin/reports/pending
+        G->>A: 12. Lista reportes pendientes
+        A->>G: 13. Cola de moderación
+        G->>F: 14. Panel de reportes
+        Admin->>F: 15. Revisa y toma decisión
+        F->>G: 16. PUT /api/admin/reports/:id/resolve
+        G->>A: 17. Resuelve reporte
+        A->>DB: 18. Actualiza estado del reporte
+        DB->>A: 19. Reporte resuelto
+    end
+
+    %% === NOTA: Arquitectura asíncrona ===
+    Note over N,Ext: Sistema de eventos asíncronos permite<br/>escalabilidad y desacoplamiento de servicios

@@ -1,0 +1,432 @@
+erDiagram
+    %% Comentarios:
+    %% - ERD normalizado (3NF) para plataforma de portafolios profesionales
+    %% - Estructura para desarrolladores, diseñadores y profesionales tech
+    %% - Incluye sistema de búsqueda de talento, mensajería y administración
+    %% - Soporte para múltiples tipos de usuarios: freelancers, empresas, reclutadores
+
+    %% === ENTIDADES DE USUARIO Y AUTENTICACIÓN ===
+    USERS {
+        uuid id PK "UUID único del usuario"
+        varchar email UK "Email único para login"
+        varchar password_hash "Hash bcrypt de la contraseña"
+        varchar first_name "Nombre del usuario"
+        varchar last_name "Apellido del usuario"
+        varchar username UK "Username único para URL personalizada"
+        varchar phone "Teléfono de contacto"
+        varchar avatar "URL foto de perfil"
+        enum user_type "PROFESSIONAL, RECRUITER, COMPANY, ADMIN"
+        enum status "ACTIVE, INACTIVE, SUSPENDED, PENDING"
+        boolean email_verified "Email verificado"
+        varchar timezone "Zona horaria del usuario"
+        varchar preferred_language "Idioma preferido"
+        timestamp last_login_at "Última fecha de login"
+        timestamp password_changed_at "Último cambio de contraseña"
+        json notification_settings "Configuraciones de notificaciones"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    USER_SESSIONS {
+        uuid id PK "UUID único de la sesión"
+        uuid user_id FK "Referencia al usuario"
+        varchar token_hash "Hash del token de sesión"
+        varchar ip_address "IP del cliente"
+        varchar user_agent "Navegador del cliente"
+        varchar device_type "Tipo de dispositivo"
+        timestamp expires_at "Fecha de expiración"
+        timestamp created_at "Fecha de creación"
+    }
+
+    PASSWORD_RESETS {
+        uuid id PK "UUID único del reset"
+        varchar email "Email para reset"
+        varchar token_hash "Hash del token de reset"
+        timestamp expires_at "Fecha de expiración"
+        timestamp created_at "Fecha de creación"
+    }
+
+    EMAIL_VERIFICATIONS {
+        uuid id PK "UUID único de la verificación"
+        uuid user_id FK "Usuario relacionado"
+        varchar token_hash "Hash del token de verificación"
+        timestamp expires_at "Fecha de expiración"
+        timestamp verified_at "Fecha de verificación"
+        timestamp created_at "Fecha de creación"
+    }
+
+    %% === ENTIDADES DE PERFIL PROFESIONAL ===
+    PROFESSIONAL_PROFILES {
+        uuid id PK "UUID único del perfil"
+        uuid user_id FK "Usuario propietario"
+        varchar title "Título profesional"
+        text bio "Descripción personal/bio"
+        varchar location "Ubicación geográfica"
+        varchar website "Sitio web personal"
+        varchar linkedin_url "Perfil de LinkedIn"
+        varchar github_url "Perfil de GitHub"
+        varchar behance_url "Perfil de Behance"
+        varchar dribbble_url "Perfil de Dribbble"
+        varchar twitter_url "Perfil de Twitter"
+        decimal hourly_rate "Tarifa por hora"
+        varchar currency "Moneda de la tarifa"
+        enum availability "AVAILABLE, BUSY, NOT_AVAILABLE"
+        boolean open_to_work "Abierto a oportunidades"
+        boolean freelance_available "Disponible para freelance"
+        boolean remote_work "Trabajo remoto"
+        varchar cover_image "Imagen de portada"
+        json custom_fields "Campos personalizados"
+        boolean is_public "Perfil público en directorio"
+        integer profile_views "Visualizaciones del perfil"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE HABILIDADES Y TECNOLOGÍAS ===
+    SKILLS {
+        uuid id PK "UUID único de la habilidad"
+        varchar name UK "Nombre de la habilidad"
+        varchar slug UK "Slug para URL"
+        varchar category "Categoría de la habilidad"
+        varchar icon "Icono de la tecnología"
+        varchar color "Color representativo"
+        text description "Descripción de la habilidad"
+        boolean is_active "Estado activo"
+        integer usage_count "Veces que se usa"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    USER_SKILLS {
+        uuid id PK "UUID único de la relación"
+        uuid user_id FK "Usuario relacionado"
+        uuid skill_id FK "Habilidad relacionada"
+        enum proficiency_level "BEGINNER, INTERMEDIATE, ADVANCED, EXPERT"
+        integer years_experience "Años de experiencia"
+        boolean is_primary "Habilidad principal"
+        integer order_position "Orden de visualización"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE EXPERIENCIA LABORAL ===
+    WORK_EXPERIENCES {
+        uuid id PK "UUID único de la experiencia"
+        uuid user_id FK "Usuario propietario"
+        varchar company_name "Nombre de la empresa"
+        varchar position "Cargo/Posición"
+        varchar company_logo "Logo de la empresa"
+        varchar company_website "Sitio web de la empresa"
+        varchar location "Ubicación del trabajo"
+        enum employment_type "FULL_TIME, PART_TIME, CONTRACT, FREELANCE, INTERNSHIP"
+        boolean is_current "Trabajo actual"
+        date start_date "Fecha de inicio"
+        date end_date "Fecha de finalización"
+        text description "Descripción del trabajo"
+        json achievements "Logros destacados"
+        json technologies_used "Tecnologías utilizadas"
+        integer order_position "Orden cronológico"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE EDUCACIÓN ===
+    EDUCATIONS {
+        uuid id PK "UUID única de la educación"
+        uuid user_id FK "Usuario propietario"
+        varchar institution "Institución educativa"
+        varchar degree "Título/Grado"
+        varchar field_of_study "Campo de estudio"
+        varchar institution_logo "Logo de la institución"
+        varchar location "Ubicación de la institución"
+        boolean is_current "Estudiando actualmente"
+        date start_date "Fecha de inicio"
+        date end_date "Fecha de finalización"
+        decimal grade "Calificación obtenida"
+        varchar grade_scale "Escala de calificación"
+        text description "Descripción adicional"
+        json achievements "Logros académicos"
+        integer order_position "Orden cronológico"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE CERTIFICACIONES ===
+    CERTIFICATIONS {
+        uuid id PK "UUID única de la certificación"
+        uuid user_id FK "Usuario propietario"
+        varchar name "Nombre de la certificación"
+        varchar issuing_organization "Organización emisora"
+        varchar credential_id "ID de la credencial"
+        varchar credential_url "URL de verificación"
+        varchar certificate_image "Imagen del certificado"
+        date issue_date "Fecha de emisión"
+        date expiration_date "Fecha de expiración"
+        boolean never_expires "No tiene expiración"
+        text description "Descripción de la certificación"
+        json skills_learned "Habilidades aprendidas"
+        integer order_position "Orden de visualización"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE PROYECTOS ===
+    PROJECTS {
+        uuid id PK "UUID único del proyecto"
+        uuid user_id FK "Usuario propietario"
+        varchar title "Título del proyecto"
+        varchar slug UK "Slug para URL"
+        text description "Descripción del proyecto"
+        text challenge "Desafío o problema resuelto"
+        text solution "Solución implementada"
+        varchar project_type "Tipo de proyecto"
+        varchar status "Estado del proyecto"
+        varchar featured_image "Imagen principal"
+        varchar live_url "URL del proyecto en vivo"
+        varchar repository_url "URL del repositorio"
+        varchar demo_url "URL de demostración"
+        varchar video_url "URL de video demo"
+        date start_date "Fecha de inicio"
+        date end_date "Fecha de finalización"
+        boolean is_featured "Proyecto destacado"
+        boolean is_public "Proyecto público"
+        integer view_count "Visualizaciones"
+        integer like_count "Likes recibidos"
+        json client_info "Información del cliente"
+        json team_members "Miembros del equipo"
+        integer order_position "Orden de visualización"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    PROJECT_IMAGES {
+        uuid id PK "UUID único de la imagen"
+        uuid project_id FK "Proyecto relacionado"
+        varchar image_url "URL de la imagen"
+        varchar alt_text "Texto alternativo"
+        varchar caption "Descripción de la imagen"
+        boolean is_featured "Imagen principal"
+        integer order_position "Orden de visualización"
+        timestamp created_at "Fecha de creación"
+    }
+
+    PROJECT_SKILLS {
+        uuid id PK "UUID único de la relación"
+        uuid project_id FK "Proyecto relacionado"
+        uuid skill_id FK "Habilidad relacionada"
+        timestamp created_at "Fecha de creación"
+    }
+
+    PROJECT_ATTACHMENTS {
+        uuid id PK "UUID único del archivo"
+        uuid project_id FK "Proyecto relacionado"
+        varchar file_name "Nombre del archivo"
+        varchar file_url "URL del archivo"
+        varchar file_type "Tipo de archivo"
+        integer file_size "Tamaño en bytes"
+        text description "Descripción del archivo"
+        integer download_count "Descargas"
+        timestamp created_at "Fecha de creación"
+    }
+
+    %% === ENTIDADES DE EMPRESAS Y RECLUTADORES ===
+    COMPANY_PROFILES {
+        uuid id PK "UUID único del perfil empresa"
+        uuid user_id FK "Usuario empresa relacionado"
+        varchar company_name "Nombre de la empresa"
+        varchar industry "Industria/Sector"
+        varchar company_size "Tamaño de la empresa"
+        varchar website "Sitio web corporativo"
+        varchar linkedin_url "LinkedIn corporativo"
+        text description "Descripción de la empresa"
+        varchar logo "Logo de la empresa"
+        varchar cover_image "Imagen de portada"
+        varchar headquarters "Sede principal"
+        varchar founded_year "Año de fundación"
+        json locations "Oficinas/Ubicaciones"
+        json benefits "Beneficios ofrecidos"
+        json culture_values "Valores empresariales"
+        boolean is_verified "Empresa verificada"
+        boolean is_hiring "Contratando actualmente"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    RECRUITER_PROFILES {
+        uuid id PK "UUID único del perfil reclutador"
+        uuid user_id FK "Usuario reclutador relacionado"
+        uuid company_profile_id FK "Empresa relacionada"
+        varchar position "Cargo del reclutador"
+        varchar specialization "Especialización de búsqueda"
+        text bio "Biografía del reclutador"
+        varchar linkedin_url "LinkedIn del reclutador"
+        json search_preferences "Preferencias de búsqueda"
+        integer successful_placements "Colocaciones exitosas"
+        boolean is_verified "Reclutador verificado"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    %% === ENTIDADES DE MENSAJERÍA ===
+    CONVERSATIONS {
+        uuid id PK "UUID único de la conversación"
+        uuid sender_id FK "Usuario que envía"
+        uuid recipient_id FK "Usuario que recibe"
+        varchar subject "Asunto del mensaje"
+        enum status "ACTIVE, ARCHIVED, BLOCKED"
+        timestamp last_message_at "Último mensaje"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    MESSAGES {
+        uuid id PK "UUID único del mensaje"
+        uuid conversation_id FK "Conversación relacionada"
+        uuid sender_id FK "Remitente del mensaje"
+        text message_content "Contenido del mensaje"
+        enum message_type "TEXT, FILE, LINK, PROJECT_INQUIRY"
+        json attachments "Archivos adjuntos"
+        boolean is_read "Mensaje leído"
+        timestamp read_at "Fecha de lectura"
+        uuid reply_to_id FK "Mensaje al que responde"
+        timestamp created_at "Fecha de creación"
+    }
+
+    %% === ENTIDADES DE BÚSQUEDA Y FILTROS ===
+    SAVED_SEARCHES {
+        uuid id PK "UUID único de la búsqueda"
+        uuid user_id FK "Usuario que guarda"
+        varchar search_name "Nombre de la búsqueda"
+        json search_criteria "Criterios de búsqueda"
+        json search_filters "Filtros aplicados"
+        boolean email_alerts "Alertas por email"
+        timestamp last_run_at "Última ejecución"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    PROFILE_VIEWS {
+        uuid id PK "UUID único de la visualización"
+        uuid viewer_id FK "Usuario que ve el perfil"
+        uuid viewed_profile_id FK "Perfil visualizado"
+        varchar viewer_ip "IP del visitante"
+        varchar user_agent "Navegador utilizado"
+        varchar referrer "Página de origen"
+        json search_context "Contexto de búsqueda"
+        timestamp created_at "Fecha de visualización"
+    }
+
+    PROFILE_LIKES {
+        uuid id PK "UUID único del like"
+        uuid user_id FK "Usuario que da like"
+        uuid liked_profile_id FK "Perfil que recibe like"
+        timestamp created_at "Fecha del like"
+    }
+
+    %% === ENTIDADES DE CONFIGURACIÓN Y ADMINISTRACIÓN ===
+    SYSTEM_SETTINGS {
+        uuid id PK "UUID único de la configuración"
+        varchar key UK "Clave única de configuración"
+        varchar value "Valor de la configuración"
+        varchar type "Tipo de dato"
+        text description "Descripción"
+        boolean is_public "Visible en frontend"
+        timestamp created_at "Fecha de creación"
+        timestamp updated_at "Fecha última actualización"
+    }
+
+    ADMIN_LOGS {
+        uuid id PK "UUID único del log"
+        uuid admin_user_id FK "Administrador que realiza acción"
+        varchar action "Acción realizada"
+        varchar resource_type "Tipo de recurso afectado"
+        uuid resource_id "ID del recurso"
+        json old_values "Valores anteriores"
+        json new_values "Valores nuevos"
+        varchar ip_address "IP del administrador"
+        varchar user_agent "Navegador"
+        timestamp created_at "Fecha de la acción"
+    }
+
+    NOTIFICATIONS {
+        uuid id PK "UUID único de la notificación"
+        uuid user_id FK "Usuario destinatario"
+        varchar type "Tipo de notificación"
+        varchar title "Título de la notificación"
+        text message "Mensaje de la notificación"
+        json data "Datos adicionales"
+        boolean is_read "Notificación leída"
+        timestamp read_at "Fecha de lectura"
+        timestamp created_at "Fecha de creación"
+    }
+
+    ANALYTICS_EVENTS {
+        uuid id PK "UUID único del evento"
+        uuid user_id FK "Usuario relacionado"
+        varchar event_type "Tipo de evento"
+        varchar event_name "Nombre del evento"
+        json event_data "Datos del evento"
+        varchar session_id "ID de sesión"
+        varchar ip_address "IP del usuario"
+        varchar user_agent "Navegador"
+        varchar page_url "URL de la página"
+        varchar referrer "Página de origen"
+        timestamp created_at "Fecha del evento"
+    }
+
+    %% === ENTIDADES DE CONTENIDO Y REPORTES ===
+    REPORTS {
+        uuid id PK "UUID único del reporte"
+        uuid reported_by FK "Usuario que reporta"
+        uuid reported_user_id FK "Usuario reportado"
+        uuid reported_project_id FK "Proyecto reportado"
+        enum report_type "INAPPROPRIATE_CONTENT, SPAM, FAKE_PROFILE, COPYRIGHT"
+        text reason "Razón del reporte"
+        enum status "PENDING, INVESTIGATING, RESOLVED, DISMISSED"
+        uuid reviewed_by FK "Administrador que revisa"
+        text admin_notes "Notas del administrador"
+        timestamp reviewed_at "Fecha de revisión"
+        timestamp created_at "Fecha de creación"
+    }
+
+    %% === RELACIONES ===
+    USERS ||--o| PROFESSIONAL_PROFILES : "tiene"
+    USERS ||--o| COMPANY_PROFILES : "tiene"
+    USERS ||--o| RECRUITER_PROFILES : "tiene"
+    USERS ||--o{ USER_SESSIONS : "mantiene"
+    USERS ||--o{ PASSWORD_RESETS : "solicita"
+    USERS ||--o{ EMAIL_VERIFICATIONS : "verifica"
+
+    USERS ||--o{ USER_SKILLS : "posee"
+    USERS ||--o{ WORK_EXPERIENCES : "tiene"
+    USERS ||--o{ EDUCATIONS : "tiene"
+    USERS ||--o{ CERTIFICATIONS : "posee"
+    USERS ||--o{ PROJECTS : "crea"
+
+    SKILLS ||--o{ USER_SKILLS : "asignada_a"
+    SKILLS ||--o{ PROJECT_SKILLS : "usada_en"
+
+    PROJECTS ||--o{ PROJECT_IMAGES : "contiene"
+    PROJECTS ||--o{ PROJECT_SKILLS : "utiliza"
+    PROJECTS ||--o{ PROJECT_ATTACHMENTS : "incluye"
+
+    COMPANY_PROFILES ||--o{ RECRUITER_PROFILES : "emplea"
+
+    USERS ||--o{ CONVERSATIONS : "participa_como_sender"
+    USERS ||--o{ CONVERSATIONS : "participa_como_recipient"
+    CONVERSATIONS ||--o{ MESSAGES : "contiene"
+    USERS ||--o{ MESSAGES : "envía"
+
+    USERS ||--o{ SAVED_SEARCHES : "guarda"
+    USERS ||--o{ PROFILE_VIEWS : "realiza"
+    USERS ||--o{ PROFILE_VIEWS : "recibe"
+    USERS ||--o{ PROFILE_LIKES : "da"
+    USERS ||--o{ PROFILE_LIKES : "recibe"
+
+    USERS ||--o{ NOTIFICATIONS : "recibe"
+    USERS ||--o{ ANALYTICS_EVENTS : "genera"
+    USERS ||--o{ ADMIN_LOGS : "ejecuta"
+
+    USERS ||--o{ REPORTS : "reporta"
+    USERS ||--o{ REPORTS : "es_reportado"
+    PROJECTS ||--o{ REPORTS : "es_reportado"

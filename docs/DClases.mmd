@@ -1,0 +1,706 @@
+classDiagram
+    %% Comentarios:
+    %% - Diagrama de clases para plataforma de portafolios profesionales y búsqueda de talento
+    %% - Coherente con el ERD, incluye herencia, composición y patrones de diseño
+    %% - Patrones: Strategy (búsqueda), Observer (notificaciones), Factory (perfiles), Repository (datos)
+    %% - Soporte para profesionales, empresas, reclutadores y administradores
+
+    %% === CLASES BASE Y ABSTRACTAS ===
+    class Entity {
+        <<abstract>>
+        +UUID id
+        +DateTime createdAt
+        +DateTime updatedAt
+        +save()
+        +delete()
+        +validate()
+        +toJSON()
+    }
+
+    class Profile {
+        <<abstract>>
+        +UUID userId
+        +Boolean isPublic
+        +Integer profileViews
+        +updateVisibility(isPublic)
+        +incrementViews()
+        +getViewCount()
+        +generateSlug()
+    }
+
+    %% === ENUMS Y TIPOS ===
+    class UserType {
+        <<enumeration>>
+        PROFESSIONAL
+        RECRUITER
+        COMPANY
+        ADMIN
+    }
+
+    class UserStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+        PENDING
+    }
+
+    class AvailabilityStatus {
+        <<enumeration>>
+        AVAILABLE
+        BUSY
+        NOT_AVAILABLE
+    }
+
+    class ProficiencyLevel {
+        <<enumeration>>
+        BEGINNER
+        INTERMEDIATE
+        ADVANCED
+        EXPERT
+    }
+
+    class EmploymentType {
+        <<enumeration>>
+        FULL_TIME
+        PART_TIME
+        CONTRACT
+        FREELANCE
+        INTERNSHIP
+    }
+
+    class MessageType {
+        <<enumeration>>
+        TEXT
+        FILE
+        LINK
+        PROJECT_INQUIRY
+    }
+
+    %% === CLASES DE USUARIO Y AUTENTICACIÓN ===
+    class User {
+        +String email
+        +String passwordHash
+        +String firstName
+        +String lastName
+        +String username
+        +String phone
+        +String avatar
+        +UserType userType
+        +UserStatus status
+        +Boolean emailVerified
+        +String timezone
+        +String preferredLanguage
+        +DateTime lastLoginAt
+        +DateTime passwordChangedAt
+        +JSON notificationSettings
+        +authenticate(password)
+        +changePassword(newPassword)
+        +updateProfile(data)
+        +generateUsername()
+        +verifyEmail()
+        +login(credentials)
+        +logout()
+        +hasRole(role)
+        +canAccess(resource)
+    }
+
+    class UserSession {
+        +UUID userId
+        +String tokenHash
+        +String ipAddress
+        +String userAgent
+        +String deviceType
+        +DateTime expiresAt
+        +isValid()
+        +extend()
+        +invalidate()
+        +refreshToken()
+        +trackActivity()
+    }
+
+    class PasswordReset {
+        +String email
+        +String tokenHash
+        +DateTime expiresAt
+        +isValid()
+        +consume()
+        +sendResetEmail()
+    }
+
+    class EmailVerification {
+        +UUID userId
+        +String tokenHash
+        +DateTime expiresAt
+        +DateTime verifiedAt
+        +verify()
+        +resendVerification()
+        +isExpired()
+    }
+
+    %% === CLASES DE PERFIL PROFESIONAL ===
+    class ProfessionalProfile {
+        +UUID userId
+        +String title
+        +String bio
+        +String location
+        +String website
+        +SocialLinks socialLinks
+        +Money hourlyRate
+        +AvailabilityStatus availability
+        +Boolean openToWork
+        +Boolean freelanceAvailable
+        +Boolean remoteWork
+        +String coverImage
+        +JSON customFields
+        +updateAvailability(status)
+        +calculateProfileCompleteness()
+        +generatePortfolioURL()
+        +updateHourlyRate(rate)
+        +addSocialLink(platform, url)
+        +getPublicData()
+        +searchOptimize()
+    }
+
+    class CompanyProfile {
+        +UUID userId
+        +String companyName
+        +String industry
+        +String companySize
+        +String website
+        +String linkedinUrl
+        +String description
+        +String logo
+        +String coverImage
+        +String headquarters
+        +String foundedYear
+        +JSON locations
+        +JSON benefits
+        +JSON cultureValues
+        +Boolean isVerified
+        +Boolean isHiring
+        +verifyCompany()
+        +updateHiringStatus(status)
+        +addLocation(location)
+        +getBenefits()
+        +getCultureValues()
+    }
+
+    class RecruiterProfile {
+        +UUID userId
+        +UUID companyProfileId
+        +String position
+        +String specialization
+        +String bio
+        +String linkedinUrl
+        +JSON searchPreferences
+        +Integer successfulPlacements
+        +Boolean isVerified
+        +updateSpecialization(spec)
+        +recordSuccessfulPlacement()
+        +getSearchHistory()
+        +updatePreferences(prefs)
+        +verifyRecruiter()
+    }
+
+    %% === CLASES DE HABILIDADES Y EXPERIENCIA ===
+    class Skill {
+        +String name
+        +String slug
+        +String category
+        +String icon
+        +String color
+        +String description
+        +Boolean isActive
+        +Integer usageCount
+        +incrementUsage()
+        +generateSlug()
+        +getRelatedSkills()
+        +getCategorySkills()
+        +updateIcon(icon)
+    }
+
+    class UserSkill {
+        +UUID userId
+        +UUID skillId
+        +ProficiencyLevel proficiencyLevel
+        +Integer yearsExperience
+        +Boolean isPrimary
+        +Integer orderPosition
+        +updateProficiency(level)
+        +calculateExperience()
+        +setPrimary()
+        +reorder(position)
+        +getSkillDetails()
+    }
+
+    class WorkExperience {
+        +UUID userId
+        +String companyName
+        +String position
+        +String companyLogo
+        +String companyWebsite
+        +String location
+        +EmploymentType employmentType
+        +Boolean isCurrent
+        +Date startDate
+        +Date endDate
+        +String description
+        +JSON achievements
+        +JSON technologiesUsed
+        +Integer orderPosition
+        +calculateDuration()
+        +markAsCurrent()
+        +addAchievement(achievement)
+        +addTechnology(tech)
+        +updatePosition(position)
+    }
+
+    class Education {
+        +UUID userId
+        +String institution
+        +String degree
+        +String fieldOfStudy
+        +String institutionLogo
+        +String location
+        +Boolean isCurrent
+        +Date startDate
+        +Date endDate
+        +Decimal grade
+        +String gradeScale
+        +String description
+        +JSON achievements
+        +Integer orderPosition
+        +calculateDuration()
+        +markAsCurrent()
+        +addAchievement(achievement)
+        +updateGrade(grade)
+    }
+
+    class Certification {
+        +UUID userId
+        +String name
+        +String issuingOrganization
+        +String credentialId
+        +String credentialUrl
+        +String certificateImage
+        +Date issueDate
+        +Date expirationDate
+        +Boolean neverExpires
+        +String description
+        +JSON skillsLearned
+        +Integer orderPosition
+        +isExpired()
+        +renewCertification()
+        +verifyCertification()
+        +addSkillLearned(skill)
+    }
+
+    %% === CLASES DE PROYECTOS ===
+    class Project {
+        +UUID userId
+        +String title
+        +String slug
+        +String description
+        +String challenge
+        +String solution
+        +String projectType
+        +String status
+        +String featuredImage
+        +String liveUrl
+        +String repositoryUrl
+        +String demoUrl
+        +String videoUrl
+        +Date startDate
+        +Date endDate
+        +Boolean isFeatured
+        +Boolean isPublic
+        +Integer viewCount
+        +Integer likeCount
+        +JSON clientInfo
+        +JSON teamMembers
+        +Integer orderPosition
+        +generateSlug()
+        +updateStatus(status)
+        +addImage(image)
+        +addSkill(skill)
+        +addAttachment(file)
+        +incrementViews()
+        +toggleLike(userId)
+        +setFeatured(featured)
+        +updateVisibility(isPublic)
+        +getPublicData()
+        +calculateCompleteness()
+    }
+
+    class ProjectImage {
+        +UUID projectId
+        +String imageUrl
+        +String altText
+        +String caption
+        +Boolean isFeatured
+        +Integer orderPosition
+        +setAsFeatured()
+        +updateCaption(caption)
+        +reorder(position)
+        +optimizeImage()
+    }
+
+    class ProjectSkill {
+        +UUID projectId
+        +UUID skillId
+        +linkSkillToProject()
+        +unlinkSkillFromProject()
+        +getProjectsBySkill()
+    }
+
+    class ProjectAttachment {
+        +UUID projectId
+        +String fileName
+        +String fileUrl
+        +String fileType
+        +Integer fileSize
+        +String description
+        +Integer downloadCount
+        +incrementDownloads()
+        +validateFileType()
+        +generateDownloadUrl()
+        +updateDescription(desc)
+    }
+
+    %% === CLASES DE MENSAJERÍA ===
+    class Conversation {
+        +UUID senderId
+        +UUID recipientId
+        +String subject
+        +ConversationStatus status
+        +DateTime lastMessageAt
+        +sendMessage(content, type)
+        +markAsRead(userId)
+        +archiveConversation()
+        +blockConversation()
+        +getMessages(limit, offset)
+        +getLastMessage()
+        +getUnreadCount(userId)
+    }
+
+    class Message {
+        +UUID conversationId
+        +UUID senderId
+        +String messageContent
+        +MessageType messageType
+        +JSON attachments
+        +Boolean isRead
+        +DateTime readAt
+        +UUID replyToId
+        +markAsRead()
+        +addAttachment(file)
+        +getThread()
+        +validateContent()
+        +encryptContent()
+    }
+
+    %% === CLASES DE BÚSQUEDA Y FILTROS ===
+    class SearchEngine {
+        <<service>>
+        +searchProfiles(criteria)
+        +searchProjects(query)
+        +searchSkills(term)
+        +advancedSearch(filters)
+        +saveSearch(userId, criteria)
+        +getRecommendations(userId)
+        +indexProfile(profile)
+        +updateSearchIndex()
+    }
+
+    class SearchCriteria {
+        +String query
+        +JSON skillFilters
+        +JSON locationFilters
+        +JSON experienceFilters
+        +AvailabilityStatus availability
+        +JSON salaryRange
+        +Boolean remoteOnly
+        +applyFilters()
+        +validateCriteria()
+        +generateQuery()
+        +serialize()
+    }
+
+    class SavedSearch {
+        +UUID userId
+        +String searchName
+        +JSON searchCriteria
+        +JSON searchFilters
+        +Boolean emailAlerts
+        +DateTime lastRunAt
+        +executeSearch()
+        +updateCriteria(criteria)
+        +toggleAlerts()
+        +getResults()
+        +scheduleExecution()
+    }
+
+    class ProfileView {
+        +UUID viewerId
+        +UUID viewedProfileId
+        +String viewerIp
+        +String userAgent
+        +String referrer
+        +JSON searchContext
+        +trackView()
+        +getViewAnalytics()
+        +isUniqueView()
+        +getViewerDetails()
+    }
+
+    class ProfileLike {
+        +UUID userId
+        +UUID likedProfileId
+        +toggleLike()
+        +getLikeCount(profileId)
+        +getUserLikes(userId)
+        +isLikedBy(userId)
+    }
+
+    %% === CLASES DE SERVICIOS ===
+    class AuthenticationService {
+        <<service>>
+        +authenticate(credentials)
+        +generateToken(user)
+        +validateToken(token)
+        +refreshToken(refreshToken)
+        +revokeToken(token)
+        +resetPassword(email)
+        +verifyEmail(token)
+        +registerUser(userData)
+    }
+
+    class ProfileService {
+        <<service>>
+        +createProfile(userId, type)
+        +updateProfile(profileId, data)
+        +getPublicProfile(username)
+        +calculateCompleteness(profileId)
+        +searchProfiles(criteria)
+        +getRecommendations(userId)
+        +updateAvailability(profileId, status)
+    }
+
+    class ProjectService {
+        <<service>>
+        +createProject(userId, projectData)
+        +updateProject(projectId, data)
+        +deleteProject(projectId)
+        +getProjectsByUser(userId)
+        +getFeaturedProjects()
+        +searchProjects(query)
+        +addProjectImage(projectId, image)
+        +addProjectSkill(projectId, skillId)
+    }
+
+    class MessageService {
+        <<service>>
+        +sendMessage(senderId, recipientId, content)
+        +getConversations(userId)
+        +markAsRead(messageId, userId)
+        +createConversation(senderId, recipientId, subject)
+        +blockUser(userId, blockedUserId)
+        +reportMessage(messageId, reason)
+    }
+
+    class NotificationService {
+        <<service>>
+        +sendNotification(userId, type, data)
+        +getNotifications(userId)
+        +markAsRead(notificationId)
+        +updateSettings(userId, settings)
+        +sendEmailNotification(userId, template, data)
+        +sendPushNotification(userId, message)
+    }
+
+    class AnalyticsService {
+        <<service>>
+        +trackEvent(userId, eventType, data)
+        +getProfileAnalytics(profileId)
+        +getProjectAnalytics(projectId)
+        +generateReport(userId, type)
+        +getSearchTrends()
+        +getPopularSkills()
+    }
+
+    class ReportService {
+        <<service>>
+        +reportContent(reporterId, contentId, reason)
+        +reviewReport(reportId, adminId, decision)
+        +getReports(status)
+        +moderateContent(contentId, action)
+        +banUser(userId, reason)
+    }
+
+    %% === CLASES DE ADMINISTRACIÓN ===
+    class AdminPanel {
+        +getUserStatistics()
+        +getSystemHealth()
+        +moderateReports()
+        +manageUsers()
+        +viewAnalytics()
+        +configureSystem()
+        +exportData()
+    }
+
+    class SystemSettings {
+        +String key
+        +String value
+        +String type
+        +String description
+        +Boolean isPublic
+        +updateSetting(key, value)
+        +getSetting(key)
+        +getPublicSettings()
+        +validateSetting(key, value)
+    }
+
+    class AdminLog {
+        +UUID adminUserId
+        +String action
+        +String resourceType
+        +UUID resourceId
+        +JSON oldValues
+        +JSON newValues
+        +String ipAddress
+        +String userAgent
+        +logAction()
+        +getActionHistory()
+        +generateAuditReport()
+    }
+
+    class Notification {
+        +UUID userId
+        +String type
+        +String title
+        +String message
+        +JSON data
+        +Boolean isRead
+        +DateTime readAt
+        +markAsRead()
+        +getUnreadCount(userId)
+        +deleteNotification()
+        +scheduleNotification()
+    }
+
+    class AnalyticsEvent {
+        +UUID userId
+        +String eventType
+        +String eventName
+        +JSON eventData
+        +String sessionId
+        +String ipAddress
+        +String userAgent
+        +String pageUrl
+        +String referrer
+        +track()
+        +aggregate()
+        +getEventsByUser()
+        +getEventsByType()
+    }
+
+    %% === CLASES AUXILIARES ===
+    class SocialLinks {
+        +String linkedin
+        +String github
+        +String behance
+        +String dribbble
+        +String twitter
+        +String portfolio
+        +addLink(platform, url)
+        +removeLink(platform)
+        +validateUrl(url)
+        +getLinks()
+    }
+
+    class Money {
+        +Decimal amount
+        +String currency
+        +add(Money other)
+        +subtract(Money other)
+        +multiply(Decimal factor)
+        +convertTo(currency)
+        +format()
+        +isZero()
+    }
+
+    class FileUpload {
+        +String fileName
+        +String fileType
+        +Integer fileSize
+        +String tempPath
+        +validateFile()
+        +uploadToStorage()
+        +generateThumbnail()
+        +optimizeImage()
+        +deleteFile()
+    }
+
+    %% === RELACIONES DE HERENCIA ===
+    Entity <|-- User
+    Entity <|-- Project
+    Entity <|-- Skill
+    Entity <|-- Conversation
+    Entity <|-- Message
+    Profile <|-- ProfessionalProfile
+    Profile <|-- CompanyProfile
+    Profile <|-- RecruiterProfile
+
+    %% === RELACIONES DE COMPOSICIÓN ===
+    User "1" *-- "0..1" ProfessionalProfile : tiene
+    User "1" *-- "0..1" CompanyProfile : tiene
+    User "1" *-- "0..1" RecruiterProfile : tiene
+    User "1" --> "0..*" UserSession : mantiene
+    User "1" --> "0..*" UserSkill : posee
+    User "1" --> "0..*" WorkExperience : tiene
+    User "1" --> "0..*" Education : tiene
+    User "1" --> "0..*" Certification : posee
+    User "1" --> "0..*" Project : crea
+
+    Project "1" *-- "0..*" ProjectImage : contiene
+    Project "1" --> "0..*" ProjectSkill : utiliza
+    Project "1" --> "0..*" ProjectAttachment : incluye
+
+    Skill "1" --> "0..*" UserSkill : asignada_a
+    Skill "1" --> "0..*" ProjectSkill : usada_en
+
+    CompanyProfile "1" --> "0..*" RecruiterProfile : emplea
+
+    User "1" --> "0..*" Conversation : participa
+    Conversation "1" *-- "1..*" Message : contiene
+
+    User "1" --> "0..*" SavedSearch : guarda
+    User "1" --> "0..*" ProfileView : realiza
+    User "1" --> "0..*" ProfileLike : da
+
+    User "1" --> "0..*" Notification : recibe
+    User "1" --> "0..*" AnalyticsEvent : genera
+
+    %% === RELACIONES DE AGREGACIÓN ===
+    ProfessionalProfile --> SocialLinks : tiene
+    ProfessionalProfile --> Money : usa
+    User --> FileUpload : usa
+
+    %% === RELACIONES DE SERVICIOS ===
+    AuthenticationService --> User : gestiona
+    ProfileService --> Profile : maneja
+    ProjectService --> Project : gestiona
+    MessageService --> Message : procesa
+    NotificationService --> Notification : envía
+    AnalyticsService --> AnalyticsEvent : rastrea
+    ReportService --> AdminLog : registra
+
+    %% === RELACIONES DE DEPENDENCIA ===
+    SearchEngine --> SearchCriteria : usa
+    SearchEngine --> Profile : indexa
+    SearchEngine --> Project : busca
+
+    ProfileService --> SearchEngine : utiliza
+    ProjectService --> NotificationService : notifica
+    MessageService --> NotificationService : alerta

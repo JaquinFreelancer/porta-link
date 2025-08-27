@@ -1,0 +1,252 @@
+graph TD
+    %% Comentarios:
+    %% - Arquitectura escalable para plataforma de portafolios profesionales y búsqueda de talento
+    %% - Separación por capas: presentación, API, servicios, datos y externa
+    %% - Soporte para profesionales, empresas, reclutadores con búsqueda avanzada
+    %% - Integración con sistemas externos: GitHub, LinkedIn, redes sociales
+
+    %% === USUARIOS Y ROLES ===
+    Visitor[Visitante/Prospecto]
+    Professional[Profesional]
+    Recruiter[Reclutador]
+    Company[Empresa]
+    Admin[Administrador]
+
+    %% === CAPA DE PRESENTACIÓN ===
+    subgraph FRONTEND ["💻 Frontend Applications"]
+        WebApp[React/Next.js SPA<br/>Main Portfolio Platform]
+        MobileApp[React Native App<br/>Mobile Portfolio]
+        EmbedWidget[Embeddable Widgets<br/>Portfolio Cards]
+        AdminPanel[Admin Dashboard<br/>Management Interface]
+        LandingPage[Marketing Site<br/>Static Generation]
+    end
+
+    %% === CAPA DE CDN Y PROXY ===
+    subgraph CDN_LAYER ["🌐 CDN & Edge Layer"]
+        CloudFront[CloudFront CDN<br/>Global Distribution]
+        ImageOptimizer[Image Optimizer<br/>WebP, Compression]
+        StaticAssets[Static Assets<br/>JS, CSS, Fonts]
+        EdgeCache[Edge Caching<br/>Performance Layer]
+    end
+
+    %% === CAPA DE BALANCEADOR Y SEGURIDAD ===
+    subgraph PROXY ["⚖️ Load Balancer & Security"]
+        LoadBalancer[Nginx Load Balancer<br/>High Availability]
+        WAF[Web Application Firewall<br/>DDoS Protection]
+        RateLimiter[Rate Limiting<br/>API Protection]
+        SSLTermination[SSL/TLS Termination<br/>Certificate Management]
+    end
+
+    %% === CAPA DE API GATEWAY ===
+    subgraph GATEWAY ["🚪 API Gateway Layer"]
+        APIGateway[Kong/AWS API Gateway<br/>Request Routing]
+        AuthMiddleware[JWT Authentication<br/>Token Validation]
+        CORSHandler[CORS Handler<br/>Cross-Origin Security]
+        RequestValidator[Request Validation<br/>Schema Validation]
+        ResponseTransformer[Response Transformer<br/>Data Formatting]
+    end
+
+    %% === CAPA DE MICROSERVICIOS PRINCIPALES ===
+    subgraph CORE_SERVICES ["🏗️ Core Microservices"]
+        UserService[User Service<br/>Authentication, Profiles]
+        ProfileService[Profile Service<br/>Professional Data]
+        ProjectService[Project Service<br/>Portfolio Management]
+        SearchService[Search Service<br/>Talent Discovery]
+        MessageService[Message Service<br/>Communication]
+        CompanyService[Company Service<br/>Enterprise Profiles]
+        AnalyticsService[Analytics Service<br/>Usage Metrics]
+        NotificationService[Notification Service<br/>Real-time Alerts]
+    end
+
+    %% === CAPA DE SERVICIOS DE SOPORTE ===
+    subgraph SUPPORT_SERVICES ["🔧 Support Services"]
+        FileService[File Service<br/>Image, Document Upload]
+        EmailService[Email Service<br/>Transactional Emails]
+        ReportService[Report Service<br/>Content Moderation]
+        IntegrationService[Integration Service<br/>External APIs]
+        RecommendationService[Recommendation Service<br/>AI-Powered Suggestions]
+        SEOService[SEO Service<br/>Search Optimization]
+        ExportService[Export Service<br/>Data Portability]
+        AuditService[Audit Service<br/>Activity Logging]
+    end
+
+    %% === CAPA DE BASE DE DATOS ===
+    subgraph DATABASE ["🗄️ Data Layer"]
+        PostgreSQL[(PostgreSQL Cluster<br/>Primary Database<br/>User, Profile, Project Data)]
+        ReadReplicas[(PostgreSQL Replicas<br/>Read-only Queries)]
+        RedisCache[(Redis Cluster<br/>Session, Cache, Real-time)]
+        Elasticsearch[(Elasticsearch<br/>Search Index, Analytics)]
+        S3Storage[(AWS S3<br/>File Storage, Images)]
+        AnalyticsDB[(ClickHouse<br/>Analytics, Events)]
+        GraphDB[(Neo4j<br/>Professional Networks)]
+    end
+
+    %% === SERVICIOS EXTERNOS ===
+    subgraph EXTERNAL ["🌐 External Services"]
+        GitHubAPI[GitHub API<br/>Repository Integration]
+        LinkedInAPI[LinkedIn API<br/>Profile Import]
+        EmailProviders[Email Providers<br/>SendGrid, AWS SES]
+        PaymentGateway[Payment Gateway<br/>Stripe, PayPal]
+        CloudStorage[Cloud Storage<br/>AWS S3, CloudFlare R2]
+        SocialAPIs[Social Media APIs<br/>Twitter, Behance]
+        GeolocationAPI[Geolocation API<br/>Location Services]
+        AIServices[AI Services<br/>OpenAI, Recommendation]
+    end
+
+    %% === SERVICIOS DE INFRAESTRUCTURA ===
+    subgraph INFRASTRUCTURE ["🏗️ Infrastructure Services"]
+        MessageQueue[Apache Kafka<br/>Event Streaming]
+        JobScheduler[Apache Airflow<br/>Background Jobs]
+        LoggingStack[ELK Stack<br/>Centralized Logging]
+        MonitoringStack[Prometheus + Grafana<br/>System Monitoring]
+        AlertManager[Alert Manager<br/>Incident Response]
+        BackupService[Backup Service<br/>Data Protection]
+        SecurityScanner[Security Scanner<br/>Vulnerability Detection]
+        PerformanceAPM[APM Tools<br/>Performance Monitoring]
+    end
+
+    %% === SERVICIOS DE MACHINE LEARNING ===
+    subgraph ML_SERVICES ["🤖 ML & AI Services"]
+        RecommendationEngine[Recommendation Engine<br/>Profile Matching]
+        SearchRanking[Search Ranking<br/>Relevance Algorithm]
+        ContentModeration[Content Moderation<br/>Automated Review]
+        SkillExtraction[Skill Extraction<br/>NLP Processing]
+        TrendAnalysis[Trend Analysis<br/>Market Insights]
+        PersonalizationEngine[Personalization<br/>User Experience]
+    end
+
+    %% === CONEXIONES PRINCIPALES USUARIOS ===
+    Visitor --> FRONTEND
+    Professional --> FRONTEND
+    Recruiter --> FRONTEND
+    Company --> FRONTEND
+    Admin --> FRONTEND
+
+    %% === CONEXIONES CDN Y FRONTEND ===
+    FRONTEND --> CDN_LAYER
+    CDN_LAYER --> PROXY
+    CloudFront --> ImageOptimizer
+    CloudFront --> StaticAssets
+    CloudFront --> EdgeCache
+
+    %% === CONEXIONES PROXY Y GATEWAY ===
+    PROXY --> GATEWAY
+    LoadBalancer --> WAF
+    WAF --> RateLimiter
+    RateLimiter --> SSLTermination
+    SSLTermination --> APIGateway
+
+    %% === CONEXIONES GATEWAY Y SERVICIOS ===
+    GATEWAY --> CORE_SERVICES
+    APIGateway --> AuthMiddleware
+    AuthMiddleware --> CORSHandler
+    CORSHandler --> RequestValidator
+    RequestValidator --> ResponseTransformer
+    ResponseTransformer --> CORE_SERVICES
+
+    %% === CONEXIONES CORE SERVICES ===
+    UserService --> PostgreSQL
+    UserService --> RedisCache
+    ProfileService --> PostgreSQL
+    ProfileService --> Elasticsearch
+    ProfileService --> S3Storage
+    ProjectService --> PostgreSQL
+    ProjectService --> S3Storage
+    ProjectService --> Elasticsearch
+    SearchService --> Elasticsearch
+    SearchService --> RedisCache
+    MessageService --> PostgreSQL
+    MessageService --> RedisCache
+    CompanyService --> PostgreSQL
+    AnalyticsService --> AnalyticsDB
+    AnalyticsService --> RedisCache
+    NotificationService --> RedisCache
+    NotificationService --> MessageQueue
+
+    %% === CONEXIONES SUPPORT SERVICES ===
+    FileService --> S3Storage
+    FileService --> CloudStorage
+    EmailService --> EmailProviders
+    ReportService --> PostgreSQL
+    IntegrationService --> GitHubAPI
+    IntegrationService --> LinkedInAPI
+    IntegrationService --> SocialAPIs
+    RecommendationService --> ML_SERVICES
+    SEOService --> Elasticsearch
+    ExportService --> PostgreSQL
+    ExportService --> S3Storage
+    AuditService --> AnalyticsDB
+
+    %% === CONEXIONES BASE DE DATOS ===
+    PostgreSQL --> ReadReplicas
+    CORE_SERVICES --> RedisCache
+    CORE_SERVICES --> Elasticsearch
+
+    %% === CONEXIONES INFRAESTRUCTURA ===
+    CORE_SERVICES --> MessageQueue
+    SUPPORT_SERVICES --> MessageQueue
+    MessageQueue --> JobScheduler
+    JobScheduler --> BackupService
+    CORE_SERVICES --> LoggingStack
+    SUPPORT_SERVICES --> LoggingStack
+    LoggingStack --> MonitoringStack
+    MonitoringStack --> AlertManager
+    SecurityScanner --> MonitoringStack
+    PerformanceAPM --> MonitoringStack
+
+    %% === CONEXIONES ML SERVICES ===
+    RecommendationEngine --> ProfileService
+    RecommendationEngine --> AnalyticsDB
+    SearchRanking --> SearchService
+    SearchRanking --> AnalyticsDB
+    ContentModeration --> ReportService
+    SkillExtraction --> ProfileService
+    SkillExtraction --> AIServices
+    TrendAnalysis --> AnalyticsDB
+    PersonalizationEngine --> UserService
+    PersonalizationEngine --> AnalyticsDB
+
+    %% === CONEXIONES EXTERNAS ===
+    IntegrationService --> EXTERNAL
+    PaymentGateway --> CORE_SERVICES
+    AIServices --> ML_SERVICES
+    GeolocationAPI --> ProfileService
+
+    %% === FLUJOS DE DATOS CRÍTICOS ===
+    ProfileService --> MessageQueue
+    MessageQueue --> SearchService
+    MessageQueue --> RecommendationEngine
+    ProjectService --> MessageQueue
+    MessageQueue --> AnalyticsService
+    MessageService --> MessageQueue
+    MessageQueue --> NotificationService
+    UserService --> MessageQueue
+    MessageQueue --> AuditService
+
+    %% === FLUJOS DE INTEGRACIÓN ===
+    GitHubAPI --> IntegrationService
+    IntegrationService --> ProjectService
+    LinkedInAPI --> IntegrationService
+    IntegrationService --> ProfileService
+    SocialAPIs --> IntegrationService
+    IntegrationService --> UserService
+
+    %% === FLUJOS DE ANALYTICS ===
+    CORE_SERVICES --> AnalyticsService
+    AnalyticsService --> TrendAnalysis
+    TrendAnalysis --> RecommendationEngine
+    AnalyticsService --> PersonalizationEngine
+    PersonalizationEngine --> SearchService
+
+    %% === FLUJOS DE BACKUP Y SEGURIDAD ===
+    BackupService --> PostgreSQL
+    BackupService --> S3Storage
+    SecurityScanner --> CORE_SERVICES
+    SecurityScanner --> SUPPORT_SERVICES
+    AuditService --> SecurityScanner
+
+    %% === FLUJOS DE NOTIFICACIONES ===
+    NotificationService --> EmailService
+    NotificationService --> WebApp
+    NotificationService --> MobileApp
+    EmailService --> EmailProviders
